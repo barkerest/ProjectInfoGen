@@ -216,6 +216,11 @@ public class CsProject
     public void SaveInternalProjectInfoFile()
     {
         var asm = typeof(CsProject).Assembly.GetName();
+        var years = CopyrightFormat.Match(Copyright) is { Success: true } match
+                        ? match.Groups["Y2"].Success
+                              ? $"new []{{ {match.Groups["Y1"].Value}, {match.Groups["Y2"].Value} }}"
+                              : $"new []{{ {match.Groups["Y1"].Value} }}"
+                        : "System.Array.Empty<int>()";
 
         File.WriteAllText(
                           InfoFile,
@@ -231,11 +236,12 @@ namespace {Product}
 {{
     internal static class InternalProjectInfo
     {{
-		public const string Product   = ""{Encode(Product)}"";
-		public const string Version   = ""{Encode(Version)}"";
-		public const string Authors   = ""{Encode(Authors)}"";
-		public const string Company   = ""{Encode(Company)}"";
-		public const string Copyright = ""{Encode(Copyright)}"";
+		public const           string Product        = ""{Encode(Product)}"";
+		public const           string Version        = ""{Encode(Version)}"";
+		public const           string Authors        = ""{Encode(Authors)}"";
+		public const           string Company        = ""{Encode(Company)}"";
+		public const           string Copyright      = ""{Encode(Copyright)}"";
+        public static readonly int[]  CopyrightYears = {years};
     }}
 }}",
                           Encoding.UTF8);
@@ -278,9 +284,9 @@ namespace {Product}
     #endregion
 
     #region Copyright Helpers
-
-    private static readonly Regex CopyrightFormat =
-        new(@"^copyright\s+(?:©|\(c\))?\s*(?<Y1>\d+(?:\s*-\s*(?<Y2>\d+)))\s+(?<COMP>.*)$", RegexOptions.IgnoreCase); 
+    
+    public static readonly Regex CopyrightFormat =
+        new(@"^copyright\s+(?:©|\(c\)|\\u00A9)?\s*(?<Y1>\d+(?:\s*-\s*(?<Y2>\d+))?)\s+(?<COMP>.*)$", RegexOptions.IgnoreCase); 
     
     public void UpdateCopyright()
     {
